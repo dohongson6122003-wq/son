@@ -81,13 +81,21 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// API Route for Order Submission
+  // API Route for Order Submission
 app.post("/api/order", async (req, res) => {
   const { name, phone, address, productTitle, productPrice, quantity } = req.body;
 
   if (!name || !phone || !address) {
     return res.status(400).json({ error: "Missing required fields" });
   }
+
+  // Force Vietnam Time (UTC+7)
+  const now = new Date();
+  const vnTimeStr = new Date(now.getTime() + (7 * 60 * 60 * 1000)).toISOString()
+    .replace(/T/, ' ')
+    .replace(/\..+/, '')
+    .split(' ')[0].split('-').reverse().join('/') + ' ' + 
+    new Date(now.getTime() + (7 * 60 * 60 * 1000)).toISOString().replace(/T/, ' ').replace(/\..+/, '').split(' ')[1];
 
   // Execute tasks in parallel to speed up response
   const tasks = [];
@@ -162,14 +170,6 @@ app.post("/api/order", async (req, res) => {
           }
         }
         
-        // Force Vietnam Time (UTC+7)
-        const now = new Date();
-        const vnTimeStr = new Date(now.getTime() + (7 * 60 * 60 * 1000)).toISOString()
-          .replace(/T/, ' ')
-          .replace(/\..+/, '')
-          .split(' ')[0].split('-').reverse().join('/') + ' ' + 
-          new Date(now.getTime() + (7 * 60 * 60 * 1000)).toISOString().replace(/T/, ' ').replace(/\..+/, '').split(' ')[1];
-
         await sheets.spreadsheets.values.append({
           spreadsheetId,
           range: `${sheetName}!A:G`,
@@ -215,10 +215,11 @@ app.post("/api/order", async (req, res) => {
             Có đơn hàng mới từ Landing Page:
             - Sản phẩm: ${productTitle || "Không rõ"}
             - Giá: ${productPrice || "Không rõ"}
+            - Số lượng: ${quantity || "1"}
             - Họ tên: ${name}
             - Số điện thoại: ${phone}
             - Địa chỉ: ${address}
-            - Thời gian: ${new Date().toLocaleString("vi-VN")}
+            - Thời gian: ${vnTimeStr}
           `,
         };
 
@@ -241,6 +242,65 @@ app.post("/api/order", async (req, res) => {
       details: error.message,
       suggestion: "Please ensure the Google Sheet ID is correct and the Service Account has Editor access."
     });
+  }
+});
+
+// API Route to fetch site content from Google Sheets
+app.get("/api/content", async (req, res) => {
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  let spreadsheetId = process.env.GOOGLE_SHEET_ID;
+
+  if (!privateKey || !serviceAccountEmail || !spreadsheetId) {
+    return res.status(500).json({ error: "Google Sheets not configured" });
+  }
+
+  try {
+    if (spreadsheetId.includes("docs.google.com/spreadsheets/d/")) {
+      const match = spreadsheetId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (match) spreadsheetId = match[1];
+    }
+
+    const { key: cleanedKey, email: emailToUse } = getCleanedGoogleAuth(privateKey, serviceAccountEmail);
+
+    const auth = new google.auth.JWT({
+      email: emailToUse,
+      key: cleanedKey,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
+
+    const sheets = google.sheets({ version: "v4", auth });
+    
+    // We'll look for a sheet named "Content"
+    const contentSheetName = "Content";
+    
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${contentSheetName}!A2:B10`, // Key, Value
+      });
+
+      const rows = response.data.values;
+      if (!rows || rows.length === 0) {
+        return res.json({});
+      }
+
+      // Convert rows to a key-value object
+      const content: Record<string, string> = {};
+      rows.forEach(row => {
+        if (row[0] && row[1]) {
+          content[row[0].trim()] = row[1].trim();
+        }
+      });
+
+      res.json(content);
+    } catch (e) {
+      // If sheet doesn't exist, return empty object
+      res.json({});
+    }
+  } catch (error: any) {
+    console.error("Error fetching content:", error);
+    res.status(500).json({ error: "Failed to fetch content" });
   }
 });
 

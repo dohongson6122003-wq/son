@@ -121,26 +121,46 @@ const ProductCard = ({ product, onOpenDetail }: { product: any, onOpenDetail: (p
 
 export default function App() {
   const [products, setProducts] = useState(PRODUCTS);
+  const [heroContent, setHeroContent] = useState(HERO_CONTENT);
+  const [featureContent, setFeatureContent] = useState(FEATURE_CONTENT);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', quantity: '1' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/products');
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            setProducts(data);
+        // Fetch Products
+        const prodRes = await fetch('/api/products');
+        if (prodRes.ok) {
+          const data = await prodRes.json();
+          if (data && data.length > 0) setProducts(data);
+        }
+
+        // Fetch Content
+        const contentRes = await fetch('/api/content');
+        if (contentRes.ok) {
+          const data = await contentRes.json();
+          if (Object.keys(data).length > 0) {
+            setHeroContent({
+              badge: data.hero_badge || HERO_CONTENT.badge,
+              title: data.hero_title || HERO_CONTENT.title,
+              description: data.hero_description || HERO_CONTENT.description,
+              image: data.hero_image || HERO_CONTENT.image
+            });
+            setFeatureContent({
+              title: data.feature_title || FEATURE_CONTENT.title,
+              description: data.feature_description || FEATURE_CONTENT.description,
+              image: data.feature_image || FEATURE_CONTENT.image
+            });
           }
         }
       } catch (error) {
-        console.error("Failed to fetch products from Sheet, using defaults.");
+        console.error("Failed to fetch data from Sheet, using defaults.");
       }
     };
-    fetchProducts();
+    fetchData();
   }, []);
 
   const [reviewIndex, setReviewIndex] = useState(0);
@@ -212,7 +232,7 @@ export default function App() {
         <section className="relative h-screen flex items-center overflow-hidden pt-20">
           <div className="absolute inset-0 z-0">
             <img 
-              src={HERO_CONTENT.image} 
+              src={heroContent.image} 
               alt="Hero background" 
               className="w-full h-full object-cover brightness-75"
               referrerPolicy="no-referrer"
@@ -228,13 +248,20 @@ export default function App() {
               className="max-w-2xl text-white"
             >
               <Badge variant="outline" className="text-white border-white/30 mb-6 px-4 py-1 text-xs uppercase tracking-[0.2em]">
-                {HERO_CONTENT.badge}
+                {heroContent.badge}
               </Badge>
               <h1 className="text-6xl md:text-8xl font-display font-extrabold leading-[0.9] mb-8 tracking-tighter">
-                {HERO_CONTENT.title.split(' ').slice(0, -3).join(' ')} <br /> <span className="text-white/60 italic">{HERO_CONTENT.title.split(' ').slice(-3).join(' ')}</span>
+                {heroContent.title.includes(' ') ? (
+                  <>
+                    {heroContent.title.split(' ').slice(0, -2).join(' ')} <br /> 
+                    <span className="text-white/60 italic">{heroContent.title.split(' ').slice(-2).join(' ')}</span>
+                  </>
+                ) : (
+                  heroContent.title
+                )}
               </h1>
               <p className="text-lg md:text-xl text-white/80 mb-10 max-w-lg leading-relaxed font-light">
-                {HERO_CONTENT.description}
+                {heroContent.description}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button onClick={scrollToOrder} size="lg" className="rounded-full px-10 py-7 text-lg font-bold group">
@@ -294,7 +321,7 @@ export default function App() {
               <div className="relative">
                 <div className="aspect-square rounded-[4rem] overflow-hidden">
                   <img 
-                    src={FEATURE_CONTENT.image} 
+                    src={featureContent.image} 
                     alt="Shoe detail" 
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
@@ -305,10 +332,10 @@ export default function App() {
                     <div className="w-12 h-12 bg-primary/5 rounded-full flex items-center justify-center">
                       <ShieldCheck className="w-6 h-6 text-primary" />
                     </div>
-                    <span className="font-bold text-sm uppercase tracking-widest">{FEATURE_CONTENT.title}</span>
+                    <span className="font-bold text-sm uppercase tracking-widest">{featureContent.title}</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    {FEATURE_CONTENT.description}
+                    {featureContent.description}
                   </p>
                 </div>
               </div>
