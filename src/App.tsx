@@ -29,7 +29,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { PRODUCTS, HERO_CONTENT } from './constants';
+import { PRODUCTS, HERO_CONTENT, FEATURE_CONTENT, REVIEWS } from './constants';
 
 import confetti from 'canvas-confetti';
 
@@ -51,7 +51,7 @@ const Navbar = ({ onScrollToOrder }: { onScrollToOrder: () => void }) => {
             <ShoppingBag className="w-6 h-6 text-primary-foreground" />
           </div>
           <span className="font-display font-extrabold text-2xl tracking-tighter text-primary">
-            STEP<span className="text-muted-foreground font-light">UP</span>
+            shop <span className="text-muted-foreground font-light">bé yêu</span>
           </span>
         </div>
 
@@ -141,6 +141,15 @@ export default function App() {
       }
     };
     fetchProducts();
+  }, []);
+
+  const [reviewIndex, setReviewIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setReviewIndex((prev) => (prev + 1) % REVIEWS.length);
+    }, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   const scrollToOrder = () => {
@@ -282,7 +291,7 @@ export default function App() {
               <div className="relative">
                 <div className="aspect-square rounded-[4rem] overflow-hidden">
                   <img 
-                    src="https://picsum.photos/seed/shoe-detail/1000/1000" 
+                    src={FEATURE_CONTENT.image} 
                     alt="Shoe detail" 
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
@@ -293,10 +302,10 @@ export default function App() {
                     <div className="w-12 h-12 bg-primary/5 rounded-full flex items-center justify-center">
                       <ShieldCheck className="w-6 h-6 text-primary" />
                     </div>
-                    <span className="font-bold text-sm uppercase tracking-widest">Chất lượng cao</span>
+                    <span className="font-bold text-sm uppercase tracking-widest">{FEATURE_CONTENT.title}</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Sử dụng vật liệu cao cấp, thoáng khí và bền bỉ theo thời gian.
+                    {FEATURE_CONTENT.description}
                   </p>
                 </div>
               </div>
@@ -353,26 +362,71 @@ export default function App() {
               KHÁCH HÀNG <span className="text-muted-foreground italic">NÓI GÌ?</span>
             </h2>
             <div className="flex justify-center gap-1">
-              {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="w-5 h-5 fill-primary text-primary" />)}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <motion.div
+                  key={i}
+                  animate={{ 
+                    opacity: [1, 0.4, 1],
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{ 
+                    duration: 1.5, 
+                    repeat: Infinity, 
+                    delay: i * 0.2,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <Star className="w-6 h-6 fill-yellow-400 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+                </motion.div>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { name: "Nguyễn Văn A", role: "Khách hàng thân thiết", text: "Giày đi rất êm chân, mẫu mã đẹp và sang trọng. Tôi đã mua cho cả gia đình." },
-              { name: "Trần Thị B", role: "Mẹ bỉm sữa", text: "Dép cho bé rất nhẹ và chống trượt tốt. Bé nhà mình rất thích đi đôi này." },
-              { name: "Lê Văn C", role: "Vận động viên", text: "Chất lượng vượt xa mong đợi trong tầm giá. Giao hàng cực nhanh." }
-            ].map((review, idx) => (
-              <Card key={idx} className="border-none bg-secondary/20 rounded-3xl p-8">
-                <CardContent className="p-0 space-y-6">
-                  <p className="text-lg italic text-primary/80 leading-relaxed">"{review.text}"</p>
-                  <div>
-                    <h4 className="font-bold text-primary">{review.name}</h4>
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest">{review.role}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="relative">
+            <div className="flex justify-center items-center min-h-[400px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={reviewIndex}
+                  initial={{ opacity: 0, x: 50, scale: 0.9 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: -50, scale: 0.9 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="w-full max-w-2xl px-4"
+                >
+                  <Card className="border-none bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-[3rem] p-8 md:p-16 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-primary"></div>
+                    <CardContent className="p-0 space-y-8">
+                      <div className="text-primary/10 absolute -top-4 -left-2 text-9xl font-serif opacity-20">“</div>
+                      <p className="text-xl md:text-2xl italic text-primary font-medium leading-relaxed relative z-10">
+                        {REVIEWS[reviewIndex].text}
+                      </p>
+                      <div className="flex items-center gap-4 pt-4">
+                        <div className="w-14 h-14 bg-secondary rounded-full flex items-center justify-center text-primary font-bold text-xl">
+                          {REVIEWS[reviewIndex].name.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-xl text-primary">{REVIEWS[reviewIndex].name}</h4>
+                          <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-bold">{REVIEWS[reviewIndex].role}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            
+            {/* Dots Indicator */}
+            <div className="flex justify-center gap-2 mt-8">
+              {REVIEWS.map((_, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => setReviewIndex(i)}
+                  className={`h-1.5 rounded-full transition-all duration-500 ${
+                    reviewIndex === i ? 'w-8 bg-primary' : 'w-2 bg-primary/20'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </section>
 
@@ -422,7 +476,7 @@ export default function App() {
                         Bạn đã đặt hàng thành công.
                       </p>
                       <p className="text-muted-foreground mb-10 leading-relaxed">
-                        Cảm ơn bạn đã tin tưởng lựa chọn <span className="font-bold text-primary">StepUp</span>. Đội ngũ của chúng tôi đang chuẩn bị những đôi giày tốt nhất để gửi đến bạn. Chúng tôi sẽ liên hệ xác nhận trong ít phút nữa!
+                        Cảm ơn bạn đã tin tưởng lựa chọn <span className="font-bold text-primary">shop bé yêu</span>. Đội ngũ của chúng tôi đang chuẩn bị những đôi giày tốt nhất để gửi đến bạn. Chúng tôi sẽ liên hệ xác nhận trong ít phút nữa!
                       </p>
                       <Button onClick={() => setStatus('idle')} variant="outline" className="rounded-full px-10 h-12 font-bold">
                         Tiếp tục mua sắm
@@ -554,94 +608,110 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Product Detail Modal (Shopee Style) */}
+      {/* Product Detail Modal (Vertical Layout - E-commerce Style) */}
       <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden rounded-[2rem] border-none">
-          <div className="grid grid-cols-1 md:grid-cols-2">
-            <div className="aspect-[4/5] bg-secondary">
-              <img 
-                src={selectedProduct?.image} 
-                alt={selectedProduct?.title} 
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            <div className="p-8 md:p-12 flex flex-col h-full">
-              <DialogHeader className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="secondary" className="rounded-full">{selectedProduct?.category}</Badge>
-                  {selectedProduct?.tag && <Badge className="rounded-full bg-primary text-primary-foreground">{selectedProduct?.tag}</Badge>}
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-[1.5rem] border-none h-[90vh] max-h-[800px] flex flex-col bg-white">
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
+            <div className="flex flex-col pb-10">
+              {/* Image Header */}
+              <div className="relative aspect-square bg-secondary/20 flex items-center justify-center">
+                <img 
+                  src={selectedProduct?.image} 
+                  alt={selectedProduct?.title} 
+                  className="w-full h-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  <Badge variant="secondary" className="w-fit text-[10px] px-2 py-0.5 rounded-full shadow-sm bg-white/80 backdrop-blur-md">{selectedProduct?.category}</Badge>
+                  {selectedProduct?.tag && <Badge className="w-fit text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground shadow-sm">{selectedProduct?.tag}</Badge>}
                 </div>
-                <DialogTitle className="text-3xl font-display font-extrabold text-primary mb-2">
-                  {selectedProduct?.title}
-                </DialogTitle>
-                <DialogDescription className="text-2xl font-bold text-primary">
-                  {selectedProduct?.price}
-                </DialogDescription>
-              </DialogHeader>
+              </div>
 
-              <ScrollArea className="flex-1 pr-4 mb-6">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Mô tả sản phẩm</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Sản phẩm cao cấp được thiết kế riêng cho sự thoải mái tối đa. Chất liệu bền bỉ, thoáng khí, phù hợp cho mọi hoạt động hàng ngày. Cam kết chính hãng 100%.
-                    </p>
+              {/* Product Info Body */}
+              <div className="p-6 space-y-6">
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-display font-extrabold text-primary leading-tight">
+                    {selectedProduct?.title}
+                  </h3>
+                  <p className="text-xl font-bold text-destructive">
+                    {selectedProduct?.price}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mô tả sản phẩm</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Sản phẩm cao cấp được thiết kế riêng cho sự thoải mái tối đa. Chất liệu bền bỉ, thoáng khí, phù hợp cho mọi hoạt động hàng ngày. Cam kết chất lượng từ shop bé yêu.
+                  </p>
+                </div>
+
+                <Separator className="opacity-50" />
+
+                {/* Order Form */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Thông tin đặt hàng</h4>
+                    <span className="text-[10px] text-muted-foreground italic">Giao hàng toàn quốc</span>
                   </div>
                   
-                  <Separator />
-
-                  {/* Quick Order Form inside Modal */}
-                  <div className="space-y-4">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Mua ngay sản phẩm này</h4>
-                    <AnimatePresence mode="wait">
-                      {status === 'success' ? (
-                        <motion.div 
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="bg-green-50 p-4 rounded-xl text-center"
-                        >
-                          <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                          <p className="text-sm font-bold text-green-800">Đặt hàng thành công!</p>
-                        </motion.div>
-                      ) : (
-                        <div className="space-y-3">
+                  <AnimatePresence mode="wait">
+                    {status === 'success' ? (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-green-50 p-6 rounded-2xl text-center border border-green-100"
+                      >
+                        <CheckCircle2 className="w-10 h-10 text-green-600 mx-auto mb-2" />
+                        <p className="text-sm font-bold text-green-800">Đặt hàng thành công!</p>
+                        <p className="text-xs text-green-700 mt-1">Chúng tôi sẽ sớm liên hệ với bạn.</p>
+                      </motion.div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="grid gap-3">
                           <Input 
-                            placeholder="Họ tên" 
-                            className="bg-secondary/30 border-none h-11"
+                            placeholder="Họ và tên khách hàng" 
+                            className="bg-secondary/30 border-none h-12 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-primary"
                             value={formData.name}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
                           />
                           <Input 
-                            placeholder="Số điện thoại" 
-                            className="bg-secondary/30 border-none h-11"
+                            placeholder="Số điện thoại liên hệ" 
+                            className="bg-secondary/30 border-none h-12 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-primary"
                             value={formData.phone}
                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
                           />
-                          <Input 
-                            placeholder="Địa chỉ" 
-                            className="bg-secondary/30 border-none h-11"
+                          <textarea 
+                            placeholder="Địa chỉ nhận hàng chi tiết" 
+                            className="w-full p-4 bg-secondary/30 border-none rounded-xl text-sm focus:ring-1 focus:ring-primary outline-none min-h-[80px] transition-all"
                             value={formData.address}
                             onChange={(e) => setFormData({...formData, address: e.target.value})}
                           />
-                          <Button 
-                            className="w-full h-12 rounded-xl font-bold mt-2"
-                            onClick={(e) => handleSubmit(e)}
-                            disabled={status === 'loading'}
-                          >
-                            {status === 'loading' ? <Loader2 className="animate-spin" /> : "XÁC NHẬN MUA NGAY"}
-                          </Button>
                         </div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </ScrollArea>
 
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-widest font-bold opacity-40">
-                <span>Miễn phí vận chuyển</span>
-                <span>•</span>
-                <span>Đổi trả 30 ngày</span>
+                        {status === 'error' && (
+                          <p className="text-[10px] text-destructive font-bold text-center">{errorMessage}</p>
+                        )}
+
+                        <Button 
+                          className="w-full h-14 rounded-xl font-bold text-base shadow-xl shadow-primary/20 active:scale-[0.98] transition-transform"
+                          onClick={(e) => handleSubmit(e)}
+                          disabled={status === 'loading'}
+                        >
+                          {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : "XÁC NHẬN MUA NGAY"}
+                        </Button>
+                        
+                        <div className="flex items-center justify-center gap-4 pt-2">
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
+                            <Truck className="w-3 h-3" /> Miễn phí ship
+                          </div>
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
+                            <RotateCcw className="w-3 h-3" /> Đổi trả 7 ngày
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           </div>

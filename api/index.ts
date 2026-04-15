@@ -119,12 +119,47 @@ app.post("/api/order", async (req, res) => {
         const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
         const sheetList = spreadsheet.data.sheets || [];
         
-        let sheetName = process.env.GOOGLE_SHEET_NAME || "Sheet1";
+        let sheetName = process.env.GOOGLE_SHEET_NAME || "Orders";
         
-        // Check if the configured sheet exists, otherwise use the first one
-        const sheetExists = sheetList.some(s => s.properties?.title === sheetName);
-        if (!sheetExists && sheetList.length > 0) {
-          sheetName = sheetList[0].properties?.title || "Sheet1";
+        // Check if the configured sheet exists
+        let sheetExists = sheetList.some(s => s.properties?.title === sheetName);
+        
+        // If not exists, try to find "Sheet1" or "Trang tính1"
+        if (!sheetExists) {
+          const fallbackNames = ["Sheet1", "Trang tính1", "Orders", "Đơn hàng"];
+          for (const name of fallbackNames) {
+            if (sheetList.some(s => s.properties?.title === name)) {
+              sheetName = name;
+              sheetExists = true;
+              break;
+            }
+          }
+        }
+
+        // If still not exists, create it
+        if (!sheetExists) {
+          try {
+            await sheets.spreadsheets.batchUpdate({
+              spreadsheetId,
+              requestBody: {
+                requests: [{
+                  addSheet: { properties: { title: sheetName } }
+                }]
+              }
+            });
+            // Add headers to new sheet
+            await sheets.spreadsheets.values.update({
+              spreadsheetId,
+              range: `${sheetName}!A1:F1`,
+              valueInputOption: "USER_ENTERED",
+              requestBody: {
+                values: [["Thời gian", "Họ tên", "Số điện thoại", "Địa chỉ", "Sản phẩm", "Giá"]]
+              }
+            });
+          } catch (e) {
+            console.error("Could not create sheet, falling back to first sheet");
+            sheetName = sheetList[0].properties?.title || "Sheet1";
+          }
         }
         
         await sheets.spreadsheets.values.append({
@@ -142,10 +177,11 @@ app.post("/api/order", async (req, res) => {
             ]],
           },
         });
-        console.log("Successfully saved to Google Sheets");
-      } catch (err) {
+        console.log("Successfully saved to Google Sheets in sheet:", sheetName);
+      } catch (err: any) {
         console.error("Google Sheets Error:", err);
-        throw new Error("Failed to save to Google Sheets");
+        const details = err.response?.data?.error?.message || err.message;
+        throw new Error(`Google Sheets Error: ${details}`);
       }
     })());
   }
@@ -189,9 +225,13 @@ app.post("/api/order", async (req, res) => {
     // Wait for all critical tasks to finish
     await Promise.all(tasks);
     res.status(200).json({ success: true, message: "Order placed successfully" });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error processing order:", error);
-    res.status(500).json({ error: "Failed to process order. Please check server logs." });
+    res.status(500).json({ 
+      error: "Failed to process order", 
+      details: error.message,
+      suggestion: "Please ensure the Google Sheet ID is correct and the Service Account has Editor access."
+    });
   }
 });
 
