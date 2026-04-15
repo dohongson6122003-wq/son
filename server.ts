@@ -31,20 +31,31 @@ async function startServer() {
       const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 
       if (serviceAccountEmail && privateKey) {
-        // Clean up the private key: handle escaped newlines and potential quotes
-        const formattedKey = privateKey
-          .replace(/\\n/g, "\n")
-          .replace(/^"(.*)"$/, "$1") // Remove leading/trailing quotes if present
-          .trim();
+        let keyToUse = privateKey;
+        let emailToUse = serviceAccountEmail;
 
-        if (!formattedKey.includes("-----BEGIN PRIVATE KEY-----")) {
-          console.error("GOOGLE_PRIVATE_KEY does not appear to be a valid PEM private key. It should start with '-----BEGIN PRIVATE KEY-----'.");
-          return res.status(500).json({ error: "Invalid Google Private Key format." });
+        // Try to parse as JSON in case the user pasted the entire service account file
+        try {
+          const credentials = JSON.parse(privateKey);
+          if (credentials.private_key) {
+            keyToUse = credentials.private_key;
+            if (credentials.client_email) {
+              emailToUse = credentials.client_email;
+            }
+          }
+        } catch (e) {
+          // Not a JSON string, clean the key manually
+          keyToUse = privateKey.replace(/\\n/g, "\n").replace(/^"(.*)"$/, "$1").trim();
+        }
+
+        // Final check for PEM headers
+        if (!keyToUse.includes("-----BEGIN")) {
+          keyToUse = `-----BEGIN PRIVATE KEY-----\n${keyToUse}\n-----END PRIVATE KEY-----`;
         }
 
         const auth = new google.auth.JWT({
-          email: serviceAccountEmail,
-          key: formattedKey,
+          email: emailToUse,
+          key: keyToUse,
           scopes: ["https://www.googleapis.com/auth/spreadsheets"],
         });
 
