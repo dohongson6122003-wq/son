@@ -83,7 +83,7 @@ app.get("/api/health", (req, res) => {
 
 // API Route for Order Submission
 app.post("/api/order", async (req, res) => {
-  const { name, phone, address, productTitle, productPrice } = req.body;
+  const { name, phone, address, productTitle, productPrice, quantity } = req.body;
 
   if (!name || !phone || !address) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -150,10 +150,10 @@ app.post("/api/order", async (req, res) => {
             // Add headers to new sheet
             await sheets.spreadsheets.values.update({
               spreadsheetId,
-              range: `${sheetName}!A1:F1`,
+              range: `${sheetName}!A1:G1`,
               valueInputOption: "USER_ENTERED",
               requestBody: {
-                values: [["Thời gian", "Họ tên", "Số điện thoại", "Địa chỉ", "Sản phẩm", "Giá"]]
+                values: [["Thời gian", "Họ tên", "Số điện thoại", "Địa chỉ", "Sản phẩm", "Giá", "Số lượng"]]
               }
             });
           } catch (e) {
@@ -162,18 +162,21 @@ app.post("/api/order", async (req, res) => {
           }
         }
         
+        const vnTime = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+
         await sheets.spreadsheets.values.append({
           spreadsheetId,
-          range: `${sheetName}!A:F`,
+          range: `${sheetName}!A:G`,
           valueInputOption: "USER_ENTERED",
           requestBody: {
             values: [[
-              new Date().toLocaleString("vi-VN"), 
+              vnTime, 
               name, 
               phone, 
               address,
               productTitle || "N/A",
-              productPrice || "N/A"
+              productPrice || "N/A",
+              quantity || "1"
             ]],
           },
         });

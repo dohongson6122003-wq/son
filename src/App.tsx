@@ -122,7 +122,7 @@ const ProductCard = ({ product, onOpenDetail }: { product: any, onOpenDetail: (p
 export default function App() {
   const [products, setProducts] = useState(PRODUCTS);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '', quantity: '1' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -180,7 +180,7 @@ export default function App() {
 
       if (response.ok) {
         setStatus('success');
-        setFormData({ name: '', phone: '', address: '' });
+        setFormData({ name: '', phone: '', address: '', quantity: '1' });
         
         // Trigger celebratory confetti
         confetti({
@@ -517,6 +517,35 @@ export default function App() {
                         ></textarea>
                       </div>
 
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Số lượng</label>
+                        <div className="flex items-center gap-4">
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            className="w-12 h-12 rounded-xl border-secondary"
+                            onClick={() => setFormData(prev => ({ ...prev, quantity: Math.max(1, parseInt(prev.quantity) - 1).toString() }))}
+                          >
+                            -
+                          </Button>
+                          <Input 
+                            type="number"
+                            min="1"
+                            value={formData.quantity}
+                            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                            className="h-12 rounded-xl bg-secondary/30 border-none text-center font-bold"
+                          />
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            className="w-12 h-12 rounded-xl border-secondary"
+                            onClick={() => setFormData(prev => ({ ...prev, quantity: (parseInt(prev.quantity) + 1).toString() }))}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+
                       {status === 'error' && (
                         <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-medium border border-destructive/20">
                           {errorMessage}
@@ -668,12 +697,31 @@ export default function App() {
                     ) : (
                       <div className="space-y-3">
                         <div className="grid gap-3">
-                          <Input 
-                            placeholder="Họ và tên khách hàng" 
-                            className="bg-secondary/30 border-none h-12 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-primary"
-                            value={formData.name}
-                            onChange={(e) => setFormData({...formData, name: e.target.value})}
-                          />
+                          <div className="grid grid-cols-2 gap-3">
+                            <Input 
+                              placeholder="Họ và tên" 
+                              className="bg-secondary/30 border-none h-12 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-primary"
+                              value={formData.name}
+                              onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            />
+                            <div className="flex items-center gap-2 bg-secondary/30 rounded-xl px-2">
+                              <button 
+                                type="button"
+                                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-primary font-bold"
+                                onClick={() => setFormData(prev => ({ ...prev, quantity: Math.max(1, parseInt(prev.quantity) - 1).toString() }))}
+                              >
+                                -
+                              </button>
+                              <span className="flex-1 text-center font-bold text-sm">{formData.quantity}</span>
+                              <button 
+                                type="button"
+                                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-primary font-bold"
+                                onClick={() => setFormData(prev => ({ ...prev, quantity: (parseInt(prev.quantity) + 1).toString() }))}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
                           <Input 
                             placeholder="Số điện thoại liên hệ" 
                             className="bg-secondary/30 border-none h-12 rounded-xl text-sm focus-visible:ring-1 focus-visible:ring-primary"
