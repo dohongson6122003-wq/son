@@ -68,7 +68,7 @@ async function startServer() {
 
   // API Route for Order Submission
   app.post("/api/order", async (req, res) => {
-    const { name, phone, address } = req.body;
+    const { name, phone, address, productTitle, productPrice } = req.body;
 
     if (!name || !phone || !address) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -104,10 +104,17 @@ async function startServer() {
           
           await sheets.spreadsheets.values.append({
             spreadsheetId,
-            range: `${sheetName}!A:D`,
+            range: `${sheetName}!A:F`,
             valueInputOption: "USER_ENTERED",
             requestBody: {
-              values: [[new Date().toLocaleString("vi-VN"), name, phone, address]],
+              values: [[
+                new Date().toLocaleString("vi-VN"), 
+                name, 
+                phone, 
+                address,
+                productTitle || "N/A",
+                productPrice || "N/A"
+              ]],
             },
           });
           console.log("Successfully saved to Google Sheets");
@@ -133,9 +140,11 @@ async function startServer() {
           const mailOptions = {
             from: process.env.EMAIL_USER,
             to: process.env.NOTIFICATION_EMAIL || "doson380@gmail.com",
-            subject: `Đơn hàng mới từ ${name}`,
+            subject: `Đơn hàng mới: ${productTitle || 'Sản phẩm'} từ ${name}`,
             text: `
               Có đơn hàng mới từ Landing Page:
+              - Sản phẩm: ${productTitle || "Không rõ"}
+              - Giá: ${productPrice || "Không rõ"}
               - Họ tên: ${name}
               - Số điện thoại: ${phone}
               - Địa chỉ: ${address}
@@ -147,7 +156,6 @@ async function startServer() {
           console.log("Successfully sent email notification");
         } catch (err) {
           console.error("Email Error:", err);
-          // We don't necessarily want to fail the whole request if email fails
         }
       })());
     }
@@ -234,6 +242,9 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+
+  return app;
 }
 
-startServer();
+const appPromise = startServer();
+export default appPromise;

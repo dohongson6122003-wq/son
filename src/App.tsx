@@ -22,6 +22,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { PRODUCTS, HERO_CONTENT } from './constants';
 
 import confetti from 'canvas-confetti';
@@ -82,21 +89,22 @@ const Navbar = ({ onScrollToOrder }: { onScrollToOrder: () => void }) => {
   );
 };
 
-const ProductCard = ({ image, title, price, category, tag }: { image: string, title: string, price: string, category: string, tag?: string }) => (
+const ProductCard = ({ product, onOpenDetail }: { product: any, onOpenDetail: (p: any) => void, key?: any }) => (
   <motion.div 
     whileHover={{ y: -10 }}
-    className="group relative"
+    className="group relative cursor-pointer"
+    onClick={() => onOpenDetail(product)}
   >
     <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-secondary mb-4">
       <img 
-        src={image} 
-        alt={title} 
+        src={product.image} 
+        alt={product.title} 
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         referrerPolicy="no-referrer"
       />
-      {tag && (
+      {product.tag && (
         <Badge className="absolute top-4 left-4 bg-white text-primary hover:bg-white border-none shadow-sm">
-          {tag}
+          {product.tag}
         </Badge>
       )}
       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -104,15 +112,16 @@ const ProductCard = ({ image, title, price, category, tag }: { image: string, ti
       </div>
     </div>
     <div className="space-y-1">
-      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{category}</p>
-      <h3 className="font-display font-bold text-xl text-primary">{title}</h3>
-      <p className="font-medium text-primary/80">{price}</p>
+      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{product.category}</p>
+      <h3 className="font-display font-bold text-xl text-primary">{product.title}</h3>
+      <p className="font-medium text-primary/80">{product.price}</p>
     </div>
   </motion.div>
 );
 
 export default function App() {
   const [products, setProducts] = useState(PRODUCTS);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -138,7 +147,7 @@ export default function App() {
     document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, productOverride?: any) => {
     e.preventDefault();
     if (!formData.name || !formData.phone || !formData.address) {
       setErrorMessage('Vui lòng điền đầy đủ thông tin');
@@ -146,12 +155,18 @@ export default function App() {
       return;
     }
 
+    const orderProduct = productOverride || selectedProduct;
+
     setStatus('loading');
     try {
       const response = await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          productTitle: orderProduct?.title || "General Order",
+          productPrice: orderProduct?.price || "N/A"
+        }),
       });
 
       if (response.ok) {
@@ -253,11 +268,8 @@ export default function App() {
             {products.map((product: any) => (
               <ProductCard 
                 key={product.id}
-                image={product.image}
-                title={product.title}
-                price={product.price}
-                category={product.category}
-                tag={product.tag}
+                product={product}
+                onOpenDetail={setSelectedProduct}
               />
             ))}
           </div>
@@ -541,6 +553,100 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Product Detail Modal (Shopee Style) */}
+      <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden rounded-[2rem] border-none">
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            <div className="aspect-[4/5] bg-secondary">
+              <img 
+                src={selectedProduct?.image} 
+                alt={selectedProduct?.title} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <div className="p-8 md:p-12 flex flex-col h-full">
+              <DialogHeader className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="secondary" className="rounded-full">{selectedProduct?.category}</Badge>
+                  {selectedProduct?.tag && <Badge className="rounded-full bg-primary text-primary-foreground">{selectedProduct?.tag}</Badge>}
+                </div>
+                <DialogTitle className="text-3xl font-display font-extrabold text-primary mb-2">
+                  {selectedProduct?.title}
+                </DialogTitle>
+                <DialogDescription className="text-2xl font-bold text-primary">
+                  {selectedProduct?.price}
+                </DialogDescription>
+              </DialogHeader>
+
+              <ScrollArea className="flex-1 pr-4 mb-6">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Mô tả sản phẩm</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Sản phẩm cao cấp được thiết kế riêng cho sự thoải mái tối đa. Chất liệu bền bỉ, thoáng khí, phù hợp cho mọi hoạt động hàng ngày. Cam kết chính hãng 100%.
+                    </p>
+                  </div>
+                  
+                  <Separator />
+
+                  {/* Quick Order Form inside Modal */}
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Mua ngay sản phẩm này</h4>
+                    <AnimatePresence mode="wait">
+                      {status === 'success' ? (
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="bg-green-50 p-4 rounded-xl text-center"
+                        >
+                          <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                          <p className="text-sm font-bold text-green-800">Đặt hàng thành công!</p>
+                        </motion.div>
+                      ) : (
+                        <div className="space-y-3">
+                          <Input 
+                            placeholder="Họ tên" 
+                            className="bg-secondary/30 border-none h-11"
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                          />
+                          <Input 
+                            placeholder="Số điện thoại" 
+                            className="bg-secondary/30 border-none h-11"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                          />
+                          <Input 
+                            placeholder="Địa chỉ" 
+                            className="bg-secondary/30 border-none h-11"
+                            value={formData.address}
+                            onChange={(e) => setFormData({...formData, address: e.target.value})}
+                          />
+                          <Button 
+                            className="w-full h-12 rounded-xl font-bold mt-2"
+                            onClick={(e) => handleSubmit(e)}
+                            disabled={status === 'loading'}
+                          >
+                            {status === 'loading' ? <Loader2 className="animate-spin" /> : "XÁC NHẬN MUA NGAY"}
+                          </Button>
+                        </div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </ScrollArea>
+
+              <div className="flex items-center justify-between text-[10px] uppercase tracking-widest font-bold opacity-40">
+                <span>Miễn phí vận chuyển</span>
+                <span>•</span>
+                <span>Đổi trả 30 ngày</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
