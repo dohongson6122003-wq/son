@@ -69,6 +69,7 @@ app.use(express.json());
 app.get("/api/health", (req, res) => {
   res.json({ 
     status: "ok", 
+    version: "1.0.2",
     diagnostics: {
       hasSheetId: !!process.env.GOOGLE_SHEET_ID,
       hasServiceAccountEmail: !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -114,7 +115,17 @@ app.post("/api/order", async (req, res) => {
           if (match) spreadsheetId = match[1];
         }
         
-        const sheetName = process.env.GOOGLE_SHEET_NAME || "Sheet1";
+        // Get spreadsheet metadata to find available sheets
+        const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+        const sheetList = spreadsheet.data.sheets || [];
+        
+        let sheetName = process.env.GOOGLE_SHEET_NAME || "Sheet1";
+        
+        // Check if the configured sheet exists, otherwise use the first one
+        const sheetExists = sheetList.some(s => s.properties?.title === sheetName);
+        if (!sheetExists && sheetList.length > 0) {
+          sheetName = sheetList[0].properties?.title || "Sheet1";
+        }
         
         await sheets.spreadsheets.values.append({
           spreadsheetId,
@@ -210,7 +221,19 @@ app.get("/api/products", async (req, res) => {
     });
 
     const sheets = google.sheets({ version: "v4", auth });
-    const productSheetName = process.env.GOOGLE_PRODUCT_SHEET_NAME || "Products";
+    
+    // Get spreadsheet metadata to find available sheets
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetList = spreadsheet.data.sheets || [];
+    
+    let productSheetName = process.env.GOOGLE_PRODUCT_SHEET_NAME || "Products";
+    
+    // Check if the configured sheet exists, otherwise use the first one
+    const sheetExists = sheetList.some(s => s.properties?.title === productSheetName);
+    if (!sheetExists && sheetList.length > 0) {
+      productSheetName = sheetList[0].properties?.title || "Products";
+      console.log(`Configured sheet not found, falling back to: ${productSheetName}`);
+    }
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -232,9 +255,14 @@ app.get("/api/products", async (req, res) => {
     }));
 
     res.json(products);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching products:", error);
-    res.status(500).json({ error: "Failed to fetch products" });
+    const message = error.response?.data?.error?.message || error.message || "Unknown error";
+    res.status(500).json({ 
+      error: "Failed to fetch products", 
+      details: message,
+      suggestion: "Check if the Google Sheet is shared with the service account email and if the sheet name 'Products' exists."
+    });
   }
 });
 
