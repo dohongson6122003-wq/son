@@ -65,6 +65,21 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Health check for diagnosing environment variables
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    diagnostics: {
+      hasSheetId: !!process.env.GOOGLE_SHEET_ID,
+      hasServiceAccountEmail: !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      hasPrivateKey: !!process.env.GOOGLE_PRIVATE_KEY,
+      hasProductSheetName: !!process.env.GOOGLE_PRODUCT_SHEET_NAME,
+      nodeEnv: process.env.NODE_ENV,
+      isVercel: !!process.env.VERCEL
+    }
+  });
+});
+
 // API Route for Order Submission
 app.post("/api/order", async (req, res) => {
   const { name, phone, address, productTitle, productPrice } = req.body;
