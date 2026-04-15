@@ -172,7 +172,10 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          quantity: formData.quantity,
           productTitle: orderProduct?.title || "General Order",
           productPrice: orderProduct?.price || "N/A"
         }),

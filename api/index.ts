@@ -162,7 +162,13 @@ app.post("/api/order", async (req, res) => {
           }
         }
         
-        const vnTime = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+        // Force Vietnam Time (UTC+7)
+        const now = new Date();
+        const vnTimeStr = new Date(now.getTime() + (7 * 60 * 60 * 1000)).toISOString()
+          .replace(/T/, ' ')
+          .replace(/\..+/, '')
+          .split(' ')[0].split('-').reverse().join('/') + ' ' + 
+          new Date(now.getTime() + (7 * 60 * 60 * 1000)).toISOString().replace(/T/, ' ').replace(/\..+/, '').split(' ')[1];
 
         await sheets.spreadsheets.values.append({
           spreadsheetId,
@@ -170,7 +176,7 @@ app.post("/api/order", async (req, res) => {
           valueInputOption: "USER_ENTERED",
           requestBody: {
             values: [[
-              vnTime, 
+              vnTimeStr, 
               name, 
               phone, 
               address,
