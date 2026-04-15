@@ -247,10 +247,10 @@ app.get("/api/products", async (req, res) => {
 
     const products = rows.map((row, index) => ({
       id: row[0] || index + 1,
-      image: row[1] || "",
-      title: row[2] || "",
-      price: row[3] || "",
-      category: row[4] || "",
+      image: row[1] || "https://picsum.photos/seed/shoe/800/1000",
+      title: row[2] || "Sản phẩm mới",
+      price: row[3] || "Liên hệ",
+      category: row[4] || "Thời trang",
       tag: row[5] || ""
     }));
 
