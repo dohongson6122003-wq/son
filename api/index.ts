@@ -83,7 +83,7 @@ app.get("/api/health", (req, res) => {
 
   // API Route for Order Submission
 app.post("/api/order", async (req, res) => {
-  const { name, phone, address, productTitle, productPrice, quantity } = req.body;
+  const { name, phone, address, productTitle, productPrice, quantity, size } = req.body;
 
   if (!name || !phone || !address) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -158,10 +158,10 @@ app.post("/api/order", async (req, res) => {
             // Add headers to new sheet
             await sheets.spreadsheets.values.update({
               spreadsheetId,
-              range: `${sheetName}!A1:G1`,
+              range: `${sheetName}!A1:H1`,
               valueInputOption: "USER_ENTERED",
               requestBody: {
-                values: [["Thời gian", "Họ tên", "Số điện thoại", "Địa chỉ", "Sản phẩm", "Giá", "Số lượng"]]
+                values: [["Thời gian", "Họ tên", "Số điện thoại", "Địa chỉ", "Sản phẩm", "Giá", "Số lượng", "Kích cỡ"]]
               }
             });
           } catch (e) {
@@ -172,7 +172,7 @@ app.post("/api/order", async (req, res) => {
         
         await sheets.spreadsheets.values.append({
           spreadsheetId,
-          range: `${sheetName}!A:G`,
+          range: `${sheetName}!A:H`,
           valueInputOption: "USER_ENTERED",
           requestBody: {
             values: [[
@@ -182,7 +182,8 @@ app.post("/api/order", async (req, res) => {
               address,
               productTitle || "N/A",
               productPrice || "N/A",
-              quantity || "1"
+              quantity || "1",
+              size || "N/A"
             ]],
           },
         });
@@ -216,6 +217,7 @@ app.post("/api/order", async (req, res) => {
             - Sản phẩm: ${productTitle || "Không rõ"}
             - Giá: ${productPrice || "Không rõ"}
             - Số lượng: ${quantity || "1"}
+            - Kích cỡ: ${size || "Không rõ"}
             - Họ tên: ${name}
             - Số điện thoại: ${phone}
             - Địa chỉ: ${address}

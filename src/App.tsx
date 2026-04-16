@@ -124,7 +124,7 @@ export default function App() {
   const [heroContent, setHeroContent] = useState(HERO_CONTENT);
   const [featureContent, setFeatureContent] = useState(FEATURE_CONTENT);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', address: '', quantity: '1' });
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '', quantity: '1', size: '40' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -196,6 +196,7 @@ export default function App() {
           phone: formData.phone,
           address: formData.address,
           quantity: formData.quantity,
+          size: formData.size,
           productTitle: orderProduct?.title || "General Order",
           productPrice: orderProduct?.price || "N/A"
         }),
@@ -203,7 +204,7 @@ export default function App() {
 
       if (response.ok) {
         setStatus('success');
-        setFormData({ name: '', phone: '', address: '', quantity: '1' });
+        setFormData({ name: '', phone: '', address: '', quantity: '1', size: '40' });
         
         // Trigger celebratory confetti
         confetti({
@@ -548,6 +549,26 @@ export default function App() {
                       </div>
 
                       <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Chọn kích cỡ (Size)</label>
+                        <div className="flex flex-wrap gap-2">
+                          {['36', '37', '38', '39', '40', '41', '42', '43', '44'].map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, size: s })}
+                              className={`w-10 h-10 rounded-lg border text-sm font-bold transition-all ${
+                                formData.size === s 
+                                  ? 'bg-primary text-white border-primary shadow-md scale-110' 
+                                  : 'bg-white text-primary border-secondary hover:border-primary'
+                              }`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Số lượng</label>
                         <div className="flex items-center gap-4">
                           <Button 
@@ -727,6 +748,25 @@ export default function App() {
                     ) : (
                       <div className="space-y-3">
                         <div className="grid gap-3">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Chọn Size</label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {['36', '37', '38', '39', '40', '41', '42', '43', '44'].map((s) => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, size: s })}
+                                  className={`w-8 h-8 rounded-md border text-[10px] font-bold transition-all ${
+                                    formData.size === s 
+                                      ? 'bg-primary text-white border-primary shadow-sm' 
+                                      : 'bg-white text-primary border-secondary hover:border-primary'
+                                  }`}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                           <div className="grid grid-cols-2 gap-3">
                             <Input 
                               placeholder="Họ và tên" 
